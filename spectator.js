@@ -146,7 +146,7 @@ function setupRealtimeChannel() {
         // Send answer
         state.channel.send({
             type: 'broadcast',
-            event: 'spectator-answer',
+            event: 'answer',
             payload: { answer: state.peerConnection.localDescription }
         });
     });
