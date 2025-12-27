@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Chat - Spectator View</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Spectator View</h1>
+            <div class="status-info">
+                <p id="status">Loading...</p>
+                <button id="leaveBtn" class="btn btn-danger" style="display: none;">Leave</button>
+            </div>
+        </div>
+
+        <!-- Video Viewer -->
+        <div class="video-viewer">
+            <div id="videoContainer" class="video-container">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Waiting for video feed...</p>
+                </div>
+            </div>
+            <div id="participants" class="participants-info"></div>
+        </div>
+
+        <!-- Join Modal -->
+        <div id="joinModal" class="modal">
+            <div class="modal-content">
+                <h2>Join as Spectator</h2>
+                <div class="form-group">
+                    <label for="tokenInput">Invite Token:</label>
+                    <input type="text" id="tokenInput" placeholder="Enter spectator token" />
+                </div>
+                <div class="form-group">
+                    <label for="roomCodeInput">Or Room Code:</label>
+                    <input type="text" id="roomCodeInput" placeholder="Enter room code" />
+                </div>
+                <button id="joinBtn" class="btn btn-primary">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="spectator.js"></script>
+</body>
+</html>
