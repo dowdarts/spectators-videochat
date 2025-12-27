@@ -98,7 +98,7 @@ async function handleJoinRoom() {
         // Verify room exists
         const { data: room, error: roomError } = await supabaseClient
             .from('rooms')
-            .select('*')
+            .select('*', { head: false, count: 'exact' })
             .eq('room_code', roomCode)
             .eq('is_active', true)
             .single();
@@ -335,3 +335,4 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
     }, 5000);
 }
+

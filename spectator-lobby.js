@@ -57,7 +57,7 @@ async function fetchLiveRooms() {
 
     const { data, error } = await supabaseClient
         .from('rooms')
-        .select('room_code, created_at')
+        .select('room_code, created_at', { head: false, count: 'exact' })
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -161,3 +161,4 @@ async function handleWatch(roomCode) {
 
 refreshBtn.addEventListener('click', fetchLiveRooms);
 document.addEventListener('DOMContentLoaded', fetchLiveRooms);
+
