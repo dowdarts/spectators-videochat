@@ -5,7 +5,9 @@ let state = {
     peerConnection: null,
     channel: null,
     remoteStream: null,
-    remoteParticipants: []
+    remoteParticipants: [],
+    pendingRemoteIce: [],
+    remoteDescriptionSet: false
 };
 
 // DOM Elements
@@ -49,6 +51,11 @@ async function handleJoinRoom() {
     const rawRoomCode = (roomCodeInput.value || '').trim();
     const roomCode = sanitizeRoomCode(rawRoomCode);
     const token = tokenInput.value.trim();
+
+    if (!token) {
+        showNotification('Spectator token is required', 'error');
+        return;
+    }
 
     if (!roomCode) {
         showNotification('Please enter a room code', 'error');
@@ -105,21 +112,12 @@ async function handleJoinRoom() {
         status.textContent = `Viewing Room: ${roomCode}`;
 
         // Setup Realtime channel
-        setupRealtimeChannel();
-
-        showNotification('Connected as spectator', 'success');
-    } catch (error) {
-        console.error('Error joining room:', error);
-        showNotification('Error joining room: ' + error.message, 'error');
-    }
-}
-
-// Setup Realtime channel
 function setupRealtimeChannel() {
-    state.channel = supabaseClient.channel(`room-${state.roomCode}`, {
+    state.channel = supabaseClient.channel(
+oom-, {
         config: {
             broadcast: { self: true },
-            presence: { key: `spectator-${Math.random()}` }
+            presence: { key: spectator- }
         }
     });
 
@@ -129,58 +127,68 @@ function setupRealtimeChannel() {
         updateParticipantsList(presenceState);
     });
 
-    // Listen for SDP offers (to establish peer connection)
-    state.channel.on('broadcast', { event: 'offer' }, async (payload) => {
-        console.log('Received offer from participant');
-        const offer = payload.payload.offer;
+    // Listen for SDP offers targeted to this spectator
+    state.channel.on('broadcast', { event: 'spectator-offer' }, async (payload) => {
+        const token = payload.payload?.token;
+        const offer = payload.payload?.offer;
+        if (!token || token !== state.spectatorToken || !offer) return;
 
         if (!state.peerConnection) {
             await createPeerConnection();
         }
 
-        // Pre-allocate transceivers to receive media
         if (!state.peerConnection.getTransceivers().length) {
             state.peerConnection.addTransceiver('video', { direction: 'recvonly' });
             state.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-            console.log('Added recvonly transceivers');
         }
 
         await state.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        console.log('setRemoteDescription OK');
+        state.remoteDescriptionSet = true;
+        await flushPendingIce();
         const answer = await state.peerConnection.createAnswer();
         await state.peerConnection.setLocalDescription(answer);
-        console.log('setLocalDescription OK');
 
-        // Send answer
         state.channel.send({
             type: 'broadcast',
-            event: 'answer',
-            payload: { answer: state.peerConnection.localDescription }
+            event: 'spectator-answer',
+            payload: { token: state.spectatorToken, answer: state.peerConnection.localDescription }
         });
     });
 
-    // Listen for ICE candidates
-    state.channel.on('broadcast', { event: 'ice-candidate' }, async (payload) => {
-        const candidate = payload.payload.candidate;
+    // Listen for ICE candidates for this spectator
+    state.channel.on('broadcast', { event: 'spectator-ice' }, async (payload) => {
+        const token = payload.payload?.token;
+        const candidate = payload.payload?.candidate;
+        if (!token || token !== state.spectatorToken || !candidate) return;
+        if (!state.peerConnection) return;
 
-        if (state.peerConnection && candidate) {
-            try {
-                await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch (error) {
-                console.error('Error adding ICE candidate:', error);
-            }
+        if (!state.remoteDescriptionSet) {
+            state.pendingRemoteIce.push(candidate);
+            return;
+        }
+
+        try {
+            await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (error) {
+            console.error('Error adding spectator ICE candidate:', error);
         }
     });
 
     state.channel.subscribe(async (status_val) => {
         if (status_val === 'SUBSCRIBED') {
             console.log('Subscribed to room as spectator');
-            await state.channel.track({ type: 'spectator' });
+            await state.channel.track({ type: 'spectator', token: state.spectatorToken });
+            state.channel.send({
+                type: 'broadcast',
+                event: 'spectator-offer-request',
+                payload: { token: state.spectatorToken }
+            });
         }
     });
 }
 
 // Create peer connection
+
 async function createPeerConnection() {
     state.peerConnection = new RTCPeerConnection({ iceServers: RTCConfig.iceServers });
 
@@ -208,8 +216,8 @@ async function createPeerConnection() {
         if (event.candidate) {
             state.channel.send({
                 type: 'broadcast',
-                event: 'ice-candidate',
-                payload: { candidate: event.candidate }
+                event: 'spectator-ice',
+                payload: { token: state.spectatorToken, candidate: event.candidate }
             });
         }
     };
@@ -224,6 +232,19 @@ async function createPeerConnection() {
         // console.log('ICE connection state:', state.peerConnection.iceConnectionState);
         updateStatus();
     };
+}
+
+async function flushPendingIce() {
+    if (!state.remoteDescriptionSet || !state.peerConnection) return;
+
+    while (state.pendingRemoteIce.length) {
+        const candidate = state.pendingRemoteIce.shift();
+        try {
+            await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (error) {
+            console.error('Error flushing spectator ICE:', error);
+        }
+    }
 }
 
 // Display remote video
@@ -281,6 +302,11 @@ async function handleLeaveRoom() {
     if (state.channel) {
         await state.channel.unsubscribe();
     }
+
+    state.pendingRemoteIce = [];
+    state.remoteDescriptionSet = false;
+    state.spectatorToken = null;
+    state.roomCode = null;
 
     joinModal.style.display = 'flex';
     leaveBtn.setAttribute('hidden', '');
