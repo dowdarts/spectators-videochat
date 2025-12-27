@@ -227,6 +227,7 @@ function displayRemoteVideo(stream) {
     }
 
     video.srcObject = stream;
+    try { video.play(); } catch {}
 }
 
 // Update participants list
