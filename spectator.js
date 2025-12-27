@@ -75,7 +75,7 @@ async function handleJoinRoom() {
         if (token) {
             const { data, error } = await supabaseClient
                 .from('spectators')
-                .select('*')
+                .select('*', { head: false, count: 'exact' })
                 .eq('spectator_token', token)
                 .eq('room_code', roomCode)
                 .single();
@@ -335,4 +335,5 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
     }, 5000);
 }
+
 
