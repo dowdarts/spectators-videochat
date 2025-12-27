@@ -3,75 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Chat - Spectator View</title>
-    <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="styles.css">
+    <title>Spectator Lobby</title>
+    <link rel="stylesheet" href="spectator-lobby.css">
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>Spectator View</h1>
-            <div class="status-info">
-                <p id="status">Loading...</p>
-                <button id="leaveBtn" type="button" class="btn btn-danger" hidden>Leave</button>
+        <header class="header">
+            <div>
+                <h1>Live Games</h1>
+                <p id="status" class="status">Loading live rooms</p>
             </div>
-        </div>
+            <button id="refreshBtn" class="btn">Refresh</button>
+        </header>
 
-        <!-- Video Viewer -->
-        <div class="video-viewer">
-            <div id="videoContainer" class="video-container">
-                <video id="remoteVideo" autoplay playsinline></video>
-                <button id="playPrompt" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); padding:12px 24px; background:rgba(0,0,0,0.8); color:white; border:2px solid white; border-radius:8px; cursor:pointer; z-index:100;" onclick="document.getElementById('remoteVideo').play(); this.style.display='none';">▶ Start Video</button>
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <p>Waiting for video feed...</p>
-                </div>
-            </div>
-            <div id="participants" class="participants-info"></div>
-        </div>
-
-        <!-- Join Modal -->
-        <div id="joinModal" class="modal">
-            <div class="modal-content">
-                <h2>Join as Spectator</h2>
-                <div class="form-group">
-                    <label for="tokenInput">Invite Token:</label>
-                    <input type="text" id="tokenInput" placeholder="Enter spectator token" />
-                </div>
-                <div class="form-group">
-                    <label for="roomCodeInput">Or Room Code:</label>
-                    <input type="text" id="roomCodeInput" placeholder="Enter room code" />
-                </div>
-                <button id="joinBtn" type="button" class="btn btn-primary">Join</button>
-            </div>
-        </div>
+        <main class="content">
+            <div id="liveList" class="live-list"></div>
+        </main>
     </div>
-
-    <!-- Notification -->
-    <div id="notification" class="notification"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-        <script>
-            // Ensure Supabase REST requests negotiate JSON
-            (function(){
-                const origFetch = window.fetch;
-                window.fetch = function(input, init){
-                    const url = typeof input === 'string' ? input : (input && input.url);
-                    init = init || {};
-                    const method = (init && init.method ? String(init.method).toUpperCase() : 'GET');
-                    if (url && typeof url === 'string' && url.includes('/rest/v1/') && url.includes((typeof SUPABASE_URL !== 'undefined' ? new URL(SUPABASE_URL).host : '.supabase.co'))){
-                        const hdrs = new Headers(init.headers || {});
-                        if (method === 'GET') {
-                            hdrs.set('Accept', 'application/json');
-                        }
-                        init.headers = hdrs;
-                    }
-                    return origFetch.call(this, input, init);
-                };
-            })();
-        </script>
-    <script src="spectator.js"></script>
+    <script src="spectator-lobby.js"></script>
 </body>
 </html>
