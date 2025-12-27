@@ -37,12 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     leaveBtn.addEventListener('click', handleLeaveRoom);
 });
 
-// Sanitize room code to 6 uppercase alphanumerics
+// Sanitize room code to 4 digits
 function sanitizeRoomCode(code) {
     return (code || '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '')
-        .slice(0, 6);
+        .replace(/[^0-9]/g, '')
+        .slice(0, 4);
 }
 
 // Handle join room
@@ -56,9 +55,9 @@ async function handleJoinRoom() {
         return;
     }
 
-    // Validate format: 6 uppercase alphanumerics
-    if (roomCode.length !== 6) {
-        showNotification('Please enter a valid 6-character room code', 'error');
+    // Validate format: 4 digits
+    if (roomCode.length !== 4) {
+        showNotification('Please enter a valid 4-digit room code', 'error');
         return;
     }
 
