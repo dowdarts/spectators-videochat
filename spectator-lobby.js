@@ -141,7 +141,7 @@ async function handleWatch(roomCode) {
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         const { error } = await supabaseClient
-            .from('spectators')
+            .from('spectators', { head: false, count: 'exact' })
             .insert([{
                 room_code: roomCode,
                 spectator_token: token,
@@ -161,4 +161,5 @@ async function handleWatch(roomCode) {
 
 refreshBtn.addEventListener('click', fetchLiveRooms);
 document.addEventListener('DOMContentLoaded', fetchLiveRooms);
+
 
