@@ -87,7 +87,7 @@ async function handleJoinRoom() {
 
         state.roomCode = roomCode;
         joinModal.style.display = 'none';
-        leaveBtn.style.display = 'inline-block';
+        leaveBtn.removeAttribute('hidden');
         status.textContent = `Viewing Room: ${roomCode}`;
 
         // Setup Realtime channel
@@ -254,7 +254,7 @@ async function handleLeaveRoom() {
     }
 
     joinModal.style.display = 'flex';
-    leaveBtn.style.display = 'none';
+    leaveBtn.setAttribute('hidden', '');
     status.textContent = 'Loading...';
     tokenInput.value = '';
     roomCodeInput.value = '';
